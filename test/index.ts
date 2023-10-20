@@ -1,19 +1,43 @@
-import { expect } from "chai";
-import { ethers } from "hardhat";
+import { expect } from 'chai';
+import { ethers } from 'hardhat';
+import { Signer } from 'ethers';
 
-describe("Greeter", function () {
-  it("Should return the new greeting once it's changed", async function () {
-    const Greeter = await ethers.getContractFactory("Greeter");
-    const greeter = await Greeter.deploy("Hello, world!");
-    await greeter.deployed();
+describe('Storylok contract', function () {
+  let storylok: any;
+  let owner: Signer;
+  let addr1: Signer;
 
-    expect(await greeter.greet()).to.equal("Hello, world!");
+  beforeEach(async function () {
+    [owner, addr1] = await ethers.getSigners();
 
-    const setGreetingTx = await greeter.setGreeting("Hola, mundo!");
+    const StorylokFactory = await ethers.getContractFactory('Storylok');
+    storylok = await StorylokFactory.deploy();
+  });
 
-    // wait until the transaction is mined
-    await setGreetingTx.wait();
+  it('Should deploy with correct name and symbol', async function () {
+    expect(await storylok.name()).to.equal('Storylok');
+    expect(await storylok.symbol()).to.equal('SL');
+  });
 
-    expect(await greeter.greet()).to.equal("Hola, mundo!");
+  it('Should mint NFTs correctly', async function () {
+    const initialTokenCount = await storylok.totalSupply();
+
+    await storylok.safeMint(await addr1.getAddress(), 'token-uri');
+
+    const newTokenCount = await storylok.totalSupply();
+    const d = BigInt(1)
+    expect(newTokenCount).to.equal(initialTokenCount + d);
+
+    const ownerOfNewToken = await storylok.ownerOf(1);
+    expect(ownerOfNewToken).to.equal(await addr1.getAddress());
+
+    const tokenUri = await storylok.tokenURI(1);
+    expect(tokenUri).to.equal('ipfs://token-uri');
+  });
+
+  it('Should not allow minting by non-owners', async function () {
+    await expect(storylok.connect(addr1).safeMint(await addr1.getAddress(), 'ipfs://token-uri')).to.be.revertedWith(
+      'Ownable: caller is not the owner'
+    );
   });
 });
