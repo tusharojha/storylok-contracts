@@ -26,6 +26,11 @@ const config: HardhatUserConfig = {
   solidity: "0.8.4",
   networks: {
 
+    sepoliaScrollTestnet: {
+      url: "https://sepolia-rpc.scroll.io",
+      chainId: 534351,
+      accounts: [process.env.PRIVATE_KEY ?? ''],
+    },
     avaxTestnet: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
       chainId: 43113,
